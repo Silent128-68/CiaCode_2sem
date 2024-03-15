@@ -12,33 +12,29 @@ namespace ConsoleApp1
         {
             // Создаем список клиентов и добавляем в него данные
             List<Client> clients = new List<Client>();
-            clients.Add(new Organization("HELP", new DateTime(2023, 01, 10), "0", 0));
-            clients.Add(new Depositor("Doe", new DateTime(2023, 01, 15), 5000, 2.5));
-            clients.Add(new Creditor("Smith", new DateTime(2023, 01, 05), 0, 0, 0));
+
+
+            using (FileStream f = new FileStream("data.bin", FileMode.OpenOrCreate))
+            {
+                if (f.Length == 0)
+                {
+                    clients.Add(new Organization("HELP", new DateTime(2023, 01, 10), "0", 0));
+                    clients.Add(new Depositor("Doe", new DateTime(2023, 01, 15), 5000, 2.5));
+                    clients.Add(new Creditor("Smith", new DateTime(2023, 01, 05), 0, 0, 0));
+                }
+                else
+                {
+                    clients = DeserializeClients("data.bin");
+                }
+            }
 
             // Выводим информацию о клиентах до сериализации
-            Console.WriteLine("Информация о клиентах до сериализации:");
+            Console.WriteLine("Информация о клиентах");
             PrintClients(clients);
             Console.WriteLine("----------------------------------------------");
 
             // Сохраняем данные в бинарный файл и выводим количество клиентов до сериализации
-            Console.WriteLine($"Количество клиентов до сериализации: {clients.Count}");
             SerializeClients(clients, "data.bin");
-            Console.WriteLine("----------------------------------------------");
-
-            // Выводим информацию о клиентах после сериализации
-            Console.WriteLine("Информация о клиентах после сериализации:");
-            PrintClients(clients);
-            Console.WriteLine("----------------------------------------------");
-
-            // Читаем данные из бинарного файла и выводим количество клиентов после десериализации
-            clients = DeserializeClients("data.bin");
-            Console.WriteLine($"Количество клиентов после десериализации: {clients.Count}");
-            Console.WriteLine("----------------------------------------------");
-
-            // Выводим информацию о клиентах после десериализации
-            Console.WriteLine("Информация о клиентах после десериализации:");
-            PrintClients(clients);
             Console.WriteLine("----------------------------------------------");
         }
 
