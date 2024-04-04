@@ -1,7 +1,7 @@
 using System;
 using System.IO;
 
-class Node
+public class Node
 {
     public int Data;
     public Node Left, Right;
@@ -13,21 +13,22 @@ class Node
     }
 }
 
-class BinarySearchTree
+public class BinaryTree
 {
-    private Node root;
+    public Node root;
 
-    public BinarySearchTree()
+    public BinaryTree()
     {
         root = null;
     }
 
+    // Вставка нового узла в дерево
     public void Insert(int data)
     {
-        root = InsertRecursive(root, data);
+        root = InsertRec(root, data);
     }
 
-    private Node InsertRecursive(Node root, int data)
+    private Node InsertRec(Node root, int data)
     {
         if (root == null)
         {
@@ -36,77 +37,72 @@ class BinarySearchTree
         }
 
         if (data < root.Data)
-            root.Left = InsertRecursive(root.Left, data);
+            root.Left = InsertRec(root.Left, data);
         else if (data > root.Data)
-            root.Right = InsertRecursive(root.Right, data);
+            root.Right = InsertRec(root.Right, data);
 
         return root;
     }
 
-    public int FindLevel(int key)
+    // Поиск уровня узла в дереве
+    public int FindLevel(int data)
     {
-        return FindLevelRecursive(root, key, 1);
+        return FindLevel(root, data, 1);
     }
 
-    public int FindLevelRecursive(Node root, int key, int level)
+    private int FindLevel(Node root, int data, int level)
     {
         if (root == null)
             return 0;
 
-        if (root.Data == key)
+        if (root.Data == data)
             return level;
 
-        int leftLevel = FindLevelRecursive(root.Left, key, level + 1);
-        if (leftLevel != 0)
-            return leftLevel;
+        int downlevel = FindLevel(root.Left, data, level + 1);
+        if (downlevel != 0)
+            return downlevel;
 
-        return FindLevelRecursive(root.Right, key, level + 1);
+        downlevel = FindLevel(root.Right, data, level + 1);
+        return downlevel;
     }
-
 }
 
 class Program
 {
     static void Main(string[] args)
     {
-        string[] lines = File.ReadAllLines("input.txt");
-        int[] numbers = Array.ConvertAll(lines[0].Split(' '), int.Parse);
+        string inputFilePath = "input.txt"; // Путь к файлу с входными данными
 
-        BinarySearchTree tree = new BinarySearchTree();
-
-        foreach (int num in numbers)
+        // Проверка наличия файла
+        if (!File.Exists(inputFilePath))
         {
-            tree.Insert(num);
+            Console.WriteLine("Файл не найден!");
+            return;
         }
 
-        Console.Write("Введите число для поиска уровня: ");
-        int searchKey = int.Parse(Console.ReadLine());
+        BinaryTree tree = new BinaryTree();
 
-        int level = tree.FindLevel(searchKey);
+        // Считывание данных из файла и вставка их в дерево
+        string[] lines = File.ReadAllLines(inputFilePath);
+        foreach (string line in lines)
+        {
+            int number;
+            if (int.TryParse(line, out number))
+            {
+                tree.Insert(number);
+            }
+        }
+
+        // Запрос на номер уровня для узла
+        Console.Write("Введите узел для поиска его уровня: ");
+        int nodeToFind = int.Parse(Console.ReadLine());
+
+        // Поиск уровня узла
+        int level = tree.FindLevel(nodeToFind);
 
         if (level != 0)
-            Console.WriteLine($"Уровень узла {searchKey}: {level}");
+            Console.WriteLine($"Узел {nodeToFind} находится на уровне {level}.");
         else
-            Console.WriteLine($"Узел {searchKey} не найден в дереве.");
+            Console.WriteLine($"Узел {nodeToFind} не найден в дереве.");
     }
 }
-
-//5 3 8 2 4 7 9
-
-//        5
-//       / \
-//      3   8
-//     / \ / \
-//    2  4 7  9
-
-//100 50 150 25 75 125 175 10 30 60 80 110 130 160 200 105
-
-  //              100
-  //         /          \
-  //       50           150
-  //     /   \         /    \
-  //   25    75      125    175
-  //  / \    / \     /       \
-  //10  30  60 80  110       200
-  //                /
-  //              105
