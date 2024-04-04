@@ -1,41 +1,41 @@
 using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-// Определение класса Node для узла бинарного дерева
+// Определение класса узла бинарного дерева
 public class Node
 {
-    public int Value; // Значение узла
-    public Node Left, Right; // Ссылки на левое и правое поддеревья
+    public int Value; 
+    public Node Left, Right; 
 
+    // Конструктор класса Node, который принимает значение узла
     public Node(int value)
     {
-        Value = value; // Инициализация значения узла
-        Left = Right = null; // Инициализация ссылок на поддеревья
+        Value = value; 
+        Left = Right = null; 
     }
 }
 
-
-// Определение класса BinarySearchTree для бинарного дерева поиска
+// Определение класса бинарного дерева поиска
 public class BinarySearchTree
 {
-    public Node root; // Корневой узел дерева
+    public Node root; 
 
     public BinarySearchTree()
     {
-        root = null;
+        root = null; 
     }
 
     // Метод вставки нового значения в дерево
     public void Insert(int value)
     {
-        root = InsertRecursive(root, value);
+        root = InsertRecursive(root, value); 
     }
 
     // Рекурсивный метод вставки
     private Node InsertRecursive(Node root, int value)
     {
-        // Если дерево пустое, создать новый узел и вернуть его
         if (root == null)
         {
             root = new Node(value);
@@ -49,27 +49,21 @@ public class BinarySearchTree
         else if (value > root.Value)
             root.Right = InsertRecursive(root.Right, value);
 
-        return root; // Вернуть корневой узел после вставки
+        return root; 
     }
 
     // Метод поиска максимального значения в дереве
     public int FindMax()
     {
-        return FindMaxRecursive(root);
-    }
-
-    // Рекурсивный метод поиска максимума
-    private int FindMaxRecursive(Node root)
-    {
-        // Если дерево пустое, выбросить исключение
         if (root == null)
-            throw new Exception("Дерево пусто");
+            throw new InvalidOperationException("Дерево пусто");
 
+        Node current = root; 
         // Пока есть правый потомок, двигаться вправо
-        while (root.Right != null)
-            root = root.Right;
+        while (current.Right != null)
+            current = current.Right;
 
-        return root.Value; // Вернуть значение самого правого узла
+        return current.Value; // Вернуть значение самого правого узла
     }
 }
 
@@ -77,39 +71,52 @@ class Program
 {
     static void Main(string[] args)
     {
-        string inputFile = "input.txt";
+        string inputFile = "input.txt"; 
 
         try
         {
-            string[] lines = File.ReadAllLines(inputFile);
-
-            if (lines.Length == 0)
+            if (!File.Exists(inputFile))
             {
-                Console.WriteLine("Файл пуст.");
+                Console.WriteLine($"Файл {inputFile} не найден.");
                 return;
             }
 
-            int[] numbers = lines.Select(int.Parse).ToArray();
-            int maxInFile = numbers.Max();
-            int countMaxInFile = numbers.Count(num => num == maxInFile);
+            List<int> numbers = new List<int>(); 
+            int maxInFile = int.MinValue; 
+            int countMaxInFile = 0; 
+
+            using (StreamReader reader = new StreamReader(inputFile))
+            {
+                string line;
+                while ((line = reader.ReadLine()) != null)
+                {
+                    if (int.TryParse(line, out int number)) // Попытка преобразования строки в число
+                    {
+                        numbers.Add(number); // Добавление числа в список
+                        maxInFile = Math.Max(maxInFile, number); // Обновление максимального значения в файле
+                    }
+                    else
+                    {
+                        Console.WriteLine($"Невозможно преобразовать строку в число: {line}");
+                    }
+                }
+            }
+
+            countMaxInFile = numbers.Count(num => num == maxInFile); 
 
             BinarySearchTree bst = new BinarySearchTree(); // Создание нового экземпляра бинарного дерева
             foreach (int num in numbers)
             {
-                bst.Insert(num); // Вставка чисел в дерево
+                bst.Insert(num); 
             }
 
-            int maxInTree = bst.FindMax();
+            int maxInTree = bst.FindMax(); 
             Console.WriteLine($"Максимальное значение в дереве: {maxInTree}");
             Console.WriteLine($"Количество узлов с максимальным значением: {countMaxInFile}");
         }
-        catch (FileNotFoundException)
+        catch (Exception ex)
         {
-            Console.WriteLine($"Файл {inputFile} не найден.");
-        }
-        catch (FormatException)
-        {
-            Console.WriteLine("Файл содержит недопустимые данные.");
+            Console.WriteLine($"Произошла ошибка: {ex.Message}"); 
         }
     }
 }
