@@ -174,8 +174,13 @@ class Program
     static void Main(string[] args)
     {
         // Считываем данные из файла
-        string[] lines = File.ReadAllLines("input.txt");
-        int[] numbers = lines.Select(int.Parse).ToArray();
+        string input = File.ReadAllText("input.txt");
+
+        // Разбиваем строку ввода на отдельные числа
+        string[] numbersAsString = input.Split(new char[] { ' ', '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+
+        // Преобразуем ввод в массив целых чисел
+        int[] numbers = Array.ConvertAll(numbersAsString, int.Parse);
 
         BinarySearchTree bst = new BinarySearchTree();
 
