@@ -1,212 +1,201 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
+using System;             // Пространство имен, содержащее базовые классы и типы .NET
+using System.IO;          // Пространство имен для работы с файлами и потоками
+using System.Linq;        // Пространство имен для работы с LINQ (Language Integrated Query)
+using System.Collections.Generic;  // Пространство имен для работы с коллекциями
 
-public class Node
+// Класс, представляющий узел бинарного дерева
+class Node
 {
-    public int Data;
-    public Node Left, Right;
+    public int Data;     // Значение узла
+    public Node Left;    // Левый потомок
+    public Node Right;   // Правый потомок
+    public int Count;    // Счетчик узлов в поддереве с корнем в данном узле
 
-    public Node(int item)
+    // Конструктор класса Node
+    public Node(int data)
     {
-        Data = item;
+        Data = data;
         Left = Right = null;
+        Count = 1;  // Инициализируем счетчик как 1 при создании узла
     }
 }
 
-public class BinarySearchTree
+// Класс, представляющий бинарное дерево поиска
+class BinarySearchTree
 {
-    private Node root;
+    public Node Root;   // Корень дерева
 
-    public BinarySearchTree()
-    {
-        root = null;
-    }
-
-    // Вставка нового узла в дерево
-    private Node Insert(Node node, int data)
-    {
-        if (node == null)
-        {
-            node = new Node(data);
-            return node;
-        }
-
-        if (data < node.Data)
-            node.Left = Insert(node.Left, data);
-        else if (data > node.Data)
-            node.Right = Insert(node.Right, data);
-
-        return node;
-    }
-
+    // Метод для вставки нового узла в дерево
     public void Insert(int data)
     {
-        root = Insert(root, data);
+        Root = InsertRec(Root, data);  // Вызов вспомогательного рекурсивного метода вставки
     }
 
-    // Удаление узла из дерева
-    private Node DeleteNode(Node root, int key)
+    // Вспомогательный рекурсивный метод для вставки узла в дерево
+    private Node InsertRec(Node root, int data)
     {
+        // Если дерево пустое, создаем новый узел и возвращаем его
+        if (root == null)
+        {
+            return new Node(data);
+        }
+
+        // Если значение для вставки меньше значения текущего узла, рекурсивно вставляем в левое поддерево
+        if (data < root.Data)
+        {
+            root.Left = InsertRec(root.Left, data);
+        }
+        // Если значение для вставки больше значения текущего узла, рекурсивно вставляем в правое поддерево
+        else if (data > root.Data)
+        {
+            root.Right = InsertRec(root.Right, data);
+        }
+
+        // После вставки обновляем счетчик узлов в поддереве с корнем в данном узле
+        root.Count = 1 + GetCount(root.Left) + GetCount(root.Right);
+        return root;
+    }
+
+    // Метод для удаления узла из дерева
+    public Node Delete(Node root, int key)
+    {
+        // Если дерево пустое, возвращаем его
         if (root == null)
             return root;
 
+        // Рекурсивно ищем узел с заданным ключом для удаления
         if (key < root.Data)
-            root.Left = DeleteNode(root.Left, key);
+        {
+            root.Left = Delete(root.Left, key);
+        }
         else if (key > root.Data)
-            root.Right = DeleteNode(root.Right, key);
+        {
+            root.Right = Delete(root.Right, key);
+        }
         else
         {
+            // Если у узла нет потомков или только один потомок, просто удаляем его
             if (root.Left == null)
                 return root.Right;
             else if (root.Right == null)
                 return root.Left;
 
+            // Если у узла два потомка, находим минимальное значение в правом поддереве
+            // и заменяем значение текущего узла на найденное минимальное значение
             root.Data = MinValue(root.Right);
-            root.Right = DeleteNode(root.Right, root.Data);
+            root.Right = Delete(root.Right, root.Data);
         }
+
+        // После удаления узла обновляем счетчик узлов в поддереве с корнем в данном узле
+        root.Count = 1 + GetCount(root.Left) + GetCount(root.Right);
         return root;
     }
 
-    private int MinValue(Node root)
+    // Метод для нахождения минимального значения в дереве
+    private int MinValue(Node node)
     {
-        int minv = root.Data;
-        while (root.Left != null)
+        int minValue = node.Data;
+        while (node.Left != null)
         {
-            minv = root.Left.Data;
-            root = root.Left;
+            minValue = node.Left.Data;
+            node = node.Left;
         }
-        return minv;
+        return minValue;
     }
 
-    public void Delete(int key)
+    // Метод для получения количества узлов в поддереве с корнем в данном узле
+    public int GetCount(Node node)
     {
-        root = DeleteNode(root, key);
+        return node == null ? 0 : node.Count;
     }
 
-    // Проверка, является ли дерево бинарным поиском
-    private bool IsBSTUtil(Node node, int min, int max)
+    // Метод для проверки идеальной сбалансированности дерева
+    public bool IsPerfectlyBalanced(Node root)
     {
-        if (node == null)
+        // Если дерево пустое, оно считается идеально сбалансированным
+        if (root == null)
             return true;
 
-        if (node.Data < min || node.Data > max)
+        int leftCount = GetCount(root.Left);   
+        int rightCount = GetCount(root.Right); 
+
+        // Проверяем, что разница в количестве узлов между поддеревьями не превышает 1
+        // И рекурсивно проверяем идеальную сбалансированность левого и правого поддеревьев
+        if (Math.Abs(leftCount - rightCount) <= 1 && IsPerfectlyBalanced(root.Left) && IsPerfectlyBalanced(root.Right))
+            return true;
+
+        return false;
+    }
+
+    // Метод для нахождения узла, который можно удалить для сбалансирования дерева
+    public Node FindNodeToRemove(Node root)
+    {
+        Queue<Node> queue = new Queue<Node>();
+        queue.Enqueue(root);
+
+        while (queue.Count > 0)
+        {
+            Node currentNode = queue.Dequeue();
+
+            // Проверяем, сбалансировано ли дерево после удаления данного узла
+            if (IsBalancedAfterRemoval(root, currentNode))
+                return currentNode;
+
+            if (currentNode.Left != null)
+                queue.Enqueue(currentNode.Left);
+            if (currentNode.Right != null)
+                queue.Enqueue(currentNode.Right);
+        }
+
+        return null;
+    }
+
+    // Метод для проверки сбалансированности дерева после удаления узла
+    public bool IsBalancedAfterRemoval(Node root, Node nodeToRemove)
+    {
+        if (root == null || nodeToRemove == null)
             return false;
 
-        return IsBSTUtil(node.Left, min, node.Data - 1) && IsBSTUtil(node.Right, node.Data + 1, max);
+        // Удаляем узел и проверяем, остается ли дерево идеально сбалансированным
+        Node newRoot = RemoveNode(root, nodeToRemove.Data);
+        return IsPerfectlyBalanced(newRoot);
     }
 
-    public bool IsBST()
+    // Вспомогательный метод для удаления узла из дерева
+    private Node RemoveNode(Node root, int key)
     {
-        return IsBSTUtil(root, int.MinValue, int.MaxValue);
-    }
-
-    // Высота дерева
-    private int Height(Node node)
-    {
-        if (node == null)
-            return 0;
-        else
-        {
-            int leftHeight = Height(node.Left);
-            int rightHeight = Height(node.Right);
-
-            return Math.Max(leftHeight, rightHeight) + 1;
-        }
-    }
-
-    // Проверка, является ли дерево сбалансированным
-    public bool IsBalanced()
-    {
-        int lh;
-        int rh;
-
-        if (root == null)
-            return true;
-
-        lh = Height(root.Left);
-        rh = Height(root.Right);
-
-        if (Math.Abs(lh - rh) <= 1 && IsBalanced(root.Left) && IsBalanced(root.Right))
-            return true;
-
-        return false;
-    }
-
-    private bool IsBalanced(Node root)
-    {
-        int lh;
-        int rh;
-
-        if (root == null)
-            return true;
-
-        lh = Height(root.Left);
-        rh = Height(root.Right);
-
-        if (Math.Abs(lh - rh) <= 1 && IsBalanced(root.Left) && IsBalanced(root.Right))
-            return true;
-
-        return false;
-    }
-
-    // Проверка возможности удаления одного узла и сбалансированности дерева после удаления
-    public void CheckRemovalAndBalance()
-    {
-        List<int> keys = new List<int>();
-
-        // Считывание последовательности целых чисел из файла
-        try
-        {
-            using (StreamReader sr = new StreamReader("input.txt"))
-            {
-                string line;
-                while ((line = sr.ReadLine()) != null)
-                {
-                    int key;
-                    if (int.TryParse(line, out key))
-                        keys.Add(key);
-                }
-            }
-        }
-        catch (Exception e)
-        {
-            Console.WriteLine("Ошибка при чтении файла: " + e.Message);
-        }
-
-        // Проверка возможности удаления узла и сбалансированности дерева после удаления
-        foreach (int key in keys)
-        {
-            BinarySearchTree tempTree = new BinarySearchTree();
-
-            // Построение дерева без одного узла
-            foreach (int k in keys)
-            {
-                if (k != key)
-                    tempTree.Insert(k);
-            }
-
-            // Проверка на то, что дерево без узла остается деревом бинарного поиска
-            if (tempTree.IsBST())
-            {
-                // Проверка на то, что дерево становится идеально сбалансированным после удаления узла
-                if (tempTree.IsBalanced())
-                {
-                    Console.WriteLine("Узел " + key + " может быть удален, чтобы дерево стало идеально сбалансированным.");
-                    return;
-                }
-            }
-        }
-
-        Console.WriteLine("Невозможно найти узел для удаления, чтобы дерево стало идеально сбалансированным.");
+        return Delete(root, key);
     }
 }
 
+// Основной класс программы
 class Program
 {
     static void Main(string[] args)
     {
+        // Считываем данные из файла
+        string[] lines = File.ReadAllLines("input.txt");
+        int[] numbers = lines.Select(int.Parse).ToArray();
+
         BinarySearchTree bst = new BinarySearchTree();
-        bst.CheckRemovalAndBalance();
+
+        // Вставляем все числа из файла в бинарное дерево поиска
+        foreach (int number in numbers)
+        {
+            bst.Insert(number);
+        }
+
+        // Находим узел, который можно удалить для сбалансирования дерева
+        Node nodeToRemove = bst.FindNodeToRemove(bst.Root);
+
+        // Выводим результат
+        if (nodeToRemove != null)
+        {
+            Console.WriteLine($"Remove node with value: {nodeToRemove.Data}");
+        }
+        else
+        {
+            Console.WriteLine("No single node can be removed to balance the tree.");
+        }
     }
 }
