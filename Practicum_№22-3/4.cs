@@ -18,18 +18,42 @@ class Program
         return Math.Sqrt(Math.Pow(city1.X - city2.X, 2) + Math.Pow(city1.Y - city2.Y, 2));
     }
 
+    // Функция для вывода взвешенного графа
+    static void PrintWeightedGraph(double[,] adjacencyMatrix, City[] cities)
+    {
+        int n = adjacencyMatrix.GetLength(0);
+        Console.WriteLine("Взвешенный граф (расстояния между городами):");
+        for (int i = 0; i < n; i++)
+        {
+            for (int j = 0; j < n; j++)
+            {
+                if (adjacencyMatrix[i, j] == double.MaxValue)
+                {
+                    Console.Write("INF\t");
+                }
+                else
+                {
+                    Console.Write($"{adjacencyMatrix[i, j]:F2}\t");
+                }
+            }
+            Console.WriteLine($" - {cities[i].Name}");
+        }
+    }
+
     // Алгоритм Дейкстры для поиска кратчайшего пути с использованием евклидова расстояния
-    static double DijkstraAlgorithm(double[,] adjacencyMatrix, int start, int end, HashSet<int> avoid)
+    static (double, List<int>) DijkstraAlgorithm(double[,] adjacencyMatrix, int start, int end, HashSet<int> avoid)
     {
         int n = adjacencyMatrix.GetLength(0); // Количество городов
         double[] distance = new double[n]; // Массив для хранения расстояний
         bool[] visited = new bool[n]; // Массив для отслеживания посещенных городов
+        int[] previous = new int[n]; // Массив для хранения предыдущих вершин на кратчайшем пути
 
         // Инициализация массивов
         for (int i = 0; i < n; i++)
         {
             distance[i] = double.MaxValue; // Изначально все расстояния бесконечны
             visited[i] = false; // Изначально все города не посещены
+            previous[i] = -1; // Изначально нет предыдущих вершин
         }
 
         distance[start] = 0; // Расстояние от начального города до него самого равно 0
@@ -62,11 +86,20 @@ class Program
                     distance[minIndex] != double.MaxValue && distance[minIndex] + adjacencyMatrix[minIndex, v] < distance[v])
                 {
                     distance[v] = distance[minIndex] + adjacencyMatrix[minIndex, v]; // Обновляем расстояние
+                    previous[v] = minIndex; // Запоминаем предыдущий город
                 }
             }
         }
 
-        return distance[end]; // Возвращаем кратчайшее расстояние до конечного города
+        // Формируем путь
+        List<int> path = new List<int>();
+        for (int at = end; at != -1; at = previous[at])
+        {
+            path.Add(at);
+        }
+        path.Reverse();
+
+        return (distance[end], path); // Возвращаем кратчайшее расстояние и путь до конечного города
     }
 
     static void Main()
@@ -102,6 +135,9 @@ class Program
                 }
             }
         }
+
+        // Вывод взвешенного графа
+        PrintWeightedGraph(adjacencyMatrix, cities);
 
         // Ввод данных с клавиатуры
         Console.WriteLine("Введите название начального города:");
@@ -142,9 +178,8 @@ class Program
             }
         }
 
-
         // Нахождение кратчайшего пути
-        double shortestDistance = DijkstraAlgorithm(adjacencyMatrix, startIndex, endIndex, avoid); // Поиск кратчайшего пути
+        var (shortestDistance, path) = DijkstraAlgorithm(adjacencyMatrix, startIndex, endIndex, avoid);
 
         if (shortestDistance == double.MaxValue)
         {
@@ -153,7 +188,17 @@ class Program
         else
         {
             // Вывод результата
-            Console.WriteLine($"Кратчайшее расстояние между {startCityName} и {endCityName}: {shortestDistance}"); // Вывод результата
+            Console.WriteLine($"Кратчайшее расстояние между {startCityName} и {endCityName}: {shortestDistance}");
+            Console.Write("Путь: ");
+            for (int i = 0; i < path.Count; i++)
+            {
+                Console.Write(cities[path[i]].Name);
+                if (i < path.Count - 1)
+                {
+                    Console.Write(" -- ");
+                }
+            }
+            Console.WriteLine();
         }
     }
 }
