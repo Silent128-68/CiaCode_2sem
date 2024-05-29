@@ -9,14 +9,12 @@ class Node
     public int Data;     // Значение узла
     public Node Left;    // Левый потомок
     public Node Right;   // Правый потомок
-    public int Count;    // Счетчик узлов в поддереве с корнем в данном узле
 
     // Конструктор класса Node
     public Node(int data)
     {
         Data = data;
         Left = Right = null;
-        Count = 1;  // Инициализируем счетчик как 1 при создании узла
     }
 }
 
@@ -51,9 +49,60 @@ class BinarySearchTree
             root.Right = InsertRec(root.Right, data);
         }
 
-        // После вставки обновляем счетчик узлов в поддереве с корнем в данном узле
-        root.Count = 1 + GetCount(root.Left) + GetCount(root.Right);
         return root;
+    }
+
+    // Метод для получения высоты дерева
+    private int GetHeight(Node node)
+    {
+        if (node == null) return 0;
+        return 1 + Math.Max(GetHeight(node.Left), GetHeight(node.Right));
+    }
+
+    // Метод для проверки идеальной сбалансированности дерева
+    public bool IsPerfectlyBalanced(Node root)
+    {
+        if (root == null) return true;
+
+        int leftHeight = GetHeight(root.Left);
+        int rightHeight = GetHeight(root.Right);
+
+        if (Math.Abs(leftHeight - rightHeight) <= 1 &&
+            IsPerfectlyBalanced(root.Left) &&
+            IsPerfectlyBalanced(root.Right))
+        {
+            return true;
+        }
+
+        return false;
+    }
+
+    // Метод для проверки сбалансированности дерева после удаления узла
+    public bool IsBalancedAfterRemoval(Node root, Node nodeToRemove)
+    {
+        if (root == null || nodeToRemove == null)
+            return false;
+
+        // Удаляем узел и проверяем, остается ли дерево идеально сбалансированным
+        Node newRoot = RemoveNode(CloneTree(root), nodeToRemove.Data);
+        return IsPerfectlyBalanced(newRoot);
+    }
+
+    // Метод для клонирования дерева
+    private Node CloneTree(Node root)
+    {
+        if (root == null) return null;
+
+        Node newNode = new Node(root.Data);
+        newNode.Left = CloneTree(root.Left);
+        newNode.Right = CloneTree(root.Right);
+        return newNode;
+    }
+
+    // Вспомогательный метод для удаления узла из дерева
+    private Node RemoveNode(Node root, int key)
+    {
+        return Delete(root, key);
     }
 
     // Метод для удаления узла из дерева
@@ -86,8 +135,6 @@ class BinarySearchTree
             root.Right = Delete(root.Right, root.Data);
         }
 
-        // После удаления узла обновляем счетчик узлов в поддереве с корнем в данном узле
-        root.Count = 1 + GetCount(root.Left) + GetCount(root.Right);
         return root;
     }
 
@@ -103,33 +150,11 @@ class BinarySearchTree
         return minValue;
     }
 
-    // Метод для получения количества узлов в поддереве с корнем в данном узле
-    public int GetCount(Node node)
-    {
-        return node == null ? 0 : node.Count;
-    }
-
-    // Метод для проверки идеальной сбалансированности дерева
-    public bool IsPerfectlyBalanced(Node root)
-    {
-        // Если дерево пустое, оно считается идеально сбалансированным
-        if (root == null)
-            return true;
-
-        int leftCount = GetCount(root.Left);   
-        int rightCount = GetCount(root.Right); 
-
-        // Проверяем, что разница в количестве узлов между поддеревьями не превышает 1
-        // И рекурсивно проверяем идеальную сбалансированность левого и правого поддеревьев
-        if (Math.Abs(leftCount - rightCount) <= 1 && IsPerfectlyBalanced(root.Left) && IsPerfectlyBalanced(root.Right))
-            return true;
-
-        return false;
-    }
-
     // Метод для нахождения узла, который можно удалить для сбалансирования дерева
     public Node FindNodeToRemove(Node root)
     {
+        if (root == null) return null;
+
         Queue<Node> queue = new Queue<Node>();
         queue.Enqueue(root);
 
@@ -137,7 +162,6 @@ class BinarySearchTree
         {
             Node currentNode = queue.Dequeue();
 
-            // Проверяем, сбалансировано ли дерево после удаления данного узла
             if (IsBalancedAfterRemoval(root, currentNode))
                 return currentNode;
 
@@ -148,23 +172,6 @@ class BinarySearchTree
         }
 
         return null;
-    }
-
-    // Метод для проверки сбалансированности дерева после удаления узла
-    public bool IsBalancedAfterRemoval(Node root, Node nodeToRemove)
-    {
-        if (root == null || nodeToRemove == null)
-            return false;
-
-        // Удаляем узел и проверяем, остается ли дерево идеально сбалансированным
-        Node newRoot = RemoveNode(root, nodeToRemove.Data);
-        return IsPerfectlyBalanced(newRoot);
-    }
-
-    // Вспомогательный метод для удаления узла из дерева
-    private Node RemoveNode(Node root, int key)
-    {
-        return Delete(root, key);
     }
 }
 
@@ -190,17 +197,23 @@ class Program
             bst.Insert(number);
         }
 
-        // Находим узел, который можно удалить для сбалансирования дерева
-        Node nodeToRemove = bst.FindNodeToRemove(bst.Root);
-
-        // Выводим результат
-        if (nodeToRemove != null)
+        // Проверяем, является ли дерево идеально сбалансированным
+        if (bst.IsPerfectlyBalanced(bst.Root))
         {
-            Console.WriteLine($"Remove node with value: {nodeToRemove.Data}");
+            Console.WriteLine("The tree is already perfectly balanced. No need to remove any nodes.");
         }
         else
         {
-            Console.WriteLine("No single node can be removed to balance the tree.");
+            // Проверяем, можно ли сбалансировать дерево удалением одного узла
+            Node nodeToRemove = bst.FindNodeToRemove(bst.Root);
+            if (nodeToRemove != null)
+            {
+                Console.WriteLine($"Remove node with value: {nodeToRemove.Data}");
+            }
+            else
+            {
+                Console.WriteLine("No single node can be removed to balance the tree. It requires removing more than one node.");
+            }
         }
     }
 }
